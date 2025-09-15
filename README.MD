@@ -1,6 +1,6 @@
 # Docker Utility
 
-A simple shell script to manage Docker containers on a server using the Docker CLI. Containers are managed with a special label (`managed-by=docker-utility`) and can be created, listed, restarted, updated, removed, exported, and imported using this utility.
+A simple shell script to manage Docker containers on a server using the Docker CLI. Containers are managed with a special label (`managed-by=docker-utility`) and can be created, listed, started, stopped, restarted, updated, removed, exported, and imported using this utility.
 
 ## Download
 
@@ -22,21 +22,22 @@ You can download the script directly from GitHub:
 ## Features
 - **Create** containers with `--restart=always` and custom options
 - **List** all managed containers
+- **Show original args** for a container
+- **Start/Stop** a managed container by name
 - **Restart** a managed container by name
 - **Update** a container (pulls image, recreates with original args)
 - **Remove** a container from inventory and delete it
-- **Show original args** for a container
 - **Export** all managed containers to JSON (with args as plain text)
 - **Import** containers from JSON (with args as plain text)
+- **Show utility version**
 - **Debug mode**: print traced Docker commands in color
 - **Colored output** for success (green) and errors (red)
 - **Proper error handling**: script exits with error code on failure
-- **Show utility version**
 
 ## Usage
 
 ```sh
-./docker-utility.sh [--debug] {create|list|restart|update|remove|args|export|import|version} [options]
+./docker-utility.sh [--debug] {create|list|args|start|stop|restart|update|remove|export|import|version} [options]
 ```
 
 ### Options
@@ -50,6 +51,10 @@ You can download the script directly from GitHub:
   List all containers managed by this utility.
 - `args <name>`  
   Show the original docker run arguments used to create the container.
+- `start <name>`  
+  Start a managed container by name.
+- `stop <name>`  
+  Stop a managed container by name.
 - `restart <name>`  
   Restart a managed container by name.
 - `update <name>`  
@@ -74,6 +79,12 @@ You can download the script directly from GitHub:
 
 # Show original args
 ./docker-utility.sh args myapp
+
+# Start a container
+./docker-utility.sh start myapp
+
+# Stop a container
+./docker-utility.sh stop myapp
 
 # Restart a container
 ./docker-utility.sh restart myapp

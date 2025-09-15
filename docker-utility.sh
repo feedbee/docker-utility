@@ -14,6 +14,8 @@ usage() {
   echo "  create  <name> <image> [docker run args...]   # Create a persistent managed container"
   echo "  list                                          # List all managed containers"
   echo "  args    <name>                                # Show original docker run args for container"
+  echo "  start   <name>                                # Start a managed container"
+  echo "  stop    <name>                                # Stop a managed container"
   echo "  restart <name>                                # Restart a managed container"
   echo "  update  <name>                                # Update (update image and recreate) a managed container"
   echo "  remove  <name>                                # Remove a managed container"
@@ -105,6 +107,31 @@ case "$CMD" in
     echo "Original docker run arguments for $NAME:"
     echo "$OPTIONS"
     ;;
+  start)
+    # Start a managed container
+    NAME="$1"
+    if [ -z "$NAME" ]; then
+      echo "Usage: $0 start <name>"
+      exit 1
+    fi
+    debug_echo docker start $NAME
+    docker start "$NAME"
+    CODE=$?
+    run_status $CODE "Container $NAME started." "Failed to start container $NAME"
+    ;;
+  stop)
+    # Stop a managed container
+    NAME="$1"
+    if [ -z "$NAME" ]; then
+      echo "Usage: $0 stop <name>"
+      exit 1
+    fi
+    debug_echo docker stop $NAME
+    docker stop "$NAME"
+    CODE=$?
+    run_status $CODE "Container $NAME stopped." "Failed to stop container $NAME"
+    ;;
+  # Restart a managed container
   restart)
     # Restart a managed container
     NAME="$1"
