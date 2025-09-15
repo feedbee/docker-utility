@@ -2,6 +2,23 @@
 
 A simple shell script to manage Docker containers on a server using the Docker CLI. Containers are managed with a special label (`managed-by=docker-utility`) and can be created, listed, restarted, updated, removed, exported, and imported using this utility.
 
+## Download
+
+You can download the script directly from GitHub:
+
+- **Latest stable release:**
+  ```sh
+  curl -fsSL -o docker-utility.sh \
+    https://github.com/feedbee/docker-utility/releases/download/v1.0.0/docker-utility.sh \
+    && chmod +x docker-utility.sh
+  ```
+- **Latest from main branch:**
+  ```sh
+  curl -fsSL -o docker-utility.sh \
+    https://raw.githubusercontent.com/feedbee/docker-utility/main/docker-utility.sh \
+    && chmod +x docker-utility.sh
+  ```
+
 ## Features
 - **Create** containers with `--restart=always` and custom options
 - **List** all managed containers
@@ -19,7 +36,7 @@ A simple shell script to manage Docker containers on a server using the Docker C
 ## Usage
 
 ```sh
-./docker-utility.sh [--debug] {create|list|restart|update|remove|args|export|import} [options]
+./docker-utility.sh [--debug] {create|list|restart|update|remove|args|export|import|version} [options]
 ```
 
 ### Options
@@ -43,6 +60,8 @@ A simple shell script to manage Docker containers on a server using the Docker C
   Export all managed containers to JSON (to stdout). The JSON will have fields: `name`, `image`, and `args` (plain text, not encoded).
 - `import`  
   Import containers from JSON (from stdin). The JSON must have fields: `name`, `image`, and `args` (plain text, not encoded).
+- `version`  
+  Show the utility version.
 
 ## Example
 
@@ -70,6 +89,9 @@ A simple shell script to manage Docker containers on a server using the Docker C
 
 # Import containers from a file
 ./docker-utility.sh import < containers.json
+
+# Show utility version
+./docker-utility.sh version
 
 # Debug mode (show traced commands)
 ./docker-utility.sh --debug update myapp
