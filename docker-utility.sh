@@ -12,7 +12,7 @@ usage() {
   echo "Usage: $0 [--debug] {create|list|restart|update|remove|args|export|import} [options]"
   echo "  --debug                                       # Print traced docker commands before execution"
   echo "  create  <name> <image> [docker run args...]   # Create a persistent managed container"
-  echo "  list                                          # List all managed containers"
+  echo "  list    [docker ps args...]                   # List all managed containers"
   echo "  args    <name>                                # Show original docker run args for container"
   echo "  start   <name>                                # Start a managed container"
   echo "  stop    <name>                                # Stop a managed container"
@@ -88,8 +88,8 @@ case "$CMD" in
     ;;
   list)
     # List all managed containers
-    debug_echo docker ps --all --filter label=$LABEL
-    docker ps --all --filter "label=$LABEL"
+    debug_echo docker ps --all --filter label=$LABEL "$@"
+    docker ps --all --filter "label=$LABEL" "$@"
     ;;
   args)
     # Show original docker run args for container
@@ -231,8 +231,8 @@ case "$CMD" in
       fi
     done
     ;;
-  # Show utility version
   version)
+    # Show utility version
     echo "Docker Utility v$VERSION"
     ;;
   *)
