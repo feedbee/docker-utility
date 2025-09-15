@@ -1,0 +1,69 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.*'
+    branches:
+      - master
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get tag version
+        id: tag
+        run: |
+          echo "TAG_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Get app version
+        id: app_version
+        run: |
+          chmod +x docker-utility.sh
+          APP_VERSION=$(./docker-utility.sh version | grep -oE '[0-9]+(\.[0-9]+)*')
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+
+      - name: Check version consistency
+        run: |
+          if [ "$TAG_VERSION" != "$APP_VERSION" ]; then
+            echo "Tag version ($TAG_VERSION) does not match app version ($APP_VERSION)"
+            exit 1
+          fi
+
+      - name: Get previous release tag
+        id: prev_tag
+        run: |
+          PREV_TAG=$(git tag --sort=creatordate | grep -E '^v[0-9]+' | grep -B1 "$GITHUB_REF_NAME" | head -n1)
+          echo "PREV_TAG=$PREV_TAG" >> $GITHUB_ENV
+
+      - name: Get release notes (commit messages)
+        id: relnotes
+        run: |
+          if [ -n "$PREV_TAG" ]; then
+            COMMITS=$(git log --pretty=format:'- %s' $PREV_TAG..$GITHUB_REF_NAME)
+          else
+            COMMITS=$(git log --pretty=format:'- %s')
+          fi
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+          echo "$COMMITS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Docker Utility v${{ env.TAG_VERSION }}
+          body: ${{ env.RELEASE_NOTES }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload script artifact
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./docker-utility.sh
+          asset_name: docker-utility.sh
+          asset_content_type: text/x-shellscript
