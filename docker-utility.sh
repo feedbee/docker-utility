@@ -3,16 +3,19 @@
 LABEL="managed-by=docker-utility"
 
 usage() {
+  echo "A simple shell script to manage Docker containers on a server using the Docker CLI."
+  echo "Containers are managed with a special label and can be created, listed, restarted, updated, removed, exported, and imported using this utility."
+  echo
   echo "Usage: $0 [--debug] {create|list|restart|update|remove|args|export|import} [options]"
-  echo "  --debug           # Print traced docker commands before execution"
-  echo "  create  <name> <image> [docker run args...]"
-  echo "  list"
-  echo "  args    <name>    # Show original docker run args for container"
-  echo "  restart <name>"
-  echo "  update  <name>"
-  echo "  remove  <name>"
-  echo "  export           # Export all managed containers to JSON (stdout, field: args)"
-  echo "  import           # Import containers from JSON (stdin, field: args)"
+  echo "  --debug                                       # Print traced docker commands before execution"
+  echo "  create  <name> <image> [docker run args...]   # Create a persistent managed container"
+  echo "  list                                          # List all managed containers"
+  echo "  args    <name>                                # Show original docker run args for container"
+  echo "  restart <name>                                # Restart a managed container"
+  echo "  update  <name>                                # Update (update image and recreate) a managed container"
+  echo "  remove  <name>                                # Remove a managed container"
+  echo "  export                                        # Export all managed containers to JSON (stdout)"
+  echo "  import                                        # Import containers from JSON (stdin)"
   exit 1
 }
 
@@ -62,6 +65,7 @@ shift
 
 case "$CMD" in
   create)
+    # Create persistent a managed container
     NAME="$1"
     IMAGE="$2"
     if [ -z "$NAME" ] || [ -z "$IMAGE" ]; then
@@ -77,10 +81,12 @@ case "$CMD" in
     run_status $CODE "Container $NAME created with image $IMAGE." "Failed to create container $NAME"
     ;;
   list)
+    # List all managed containers
     debug_echo docker ps --filter label=$LABEL
     docker ps --filter "label=$LABEL"
     ;;
   args)
+    # Show original docker run args for container
     NAME="$1"
     if [ -z "$NAME" ]; then
       echo "Usage: $0 args <name>"
@@ -96,6 +102,7 @@ case "$CMD" in
     echo "$OPTIONS"
     ;;
   restart)
+    # Restart a managed container
     NAME="$1"
     if [ -z "$NAME" ]; then
       echo "Usage: $0 restart <name>"
@@ -107,6 +114,7 @@ case "$CMD" in
     run_status $CODE "Container $NAME restarted." "Failed to restart container $NAME"
     ;;
   update)
+    # Update (update image and recreate) a managed container
     NAME="$1"
     if [ -z "$NAME" ]; then
       echo "Usage: $0 update <name>"
@@ -145,6 +153,7 @@ case "$CMD" in
     run_status $CODE "Container $NAME updated with image $IMAGE." "Failed to update container $NAME"
     ;;
   remove)
+    # Remove a managed container
     NAME="$1"
     if [ -z "$NAME" ]; then
       echo "Usage: $0 remove <name>"
