@@ -3,7 +3,7 @@
 LABEL="managed-by=docker-utility"
 
 usage() {
-  echo "Usage: $0 [--debug] {create|list|restart|update|remove|args} [options]"
+  echo "Usage: $0 [--debug] {create|list|restart|update|remove|args|export|import} [options]"
   echo "  --debug           # Print traced docker commands before execution"
   echo "  create  <name> <image> [docker run args...]"
   echo "  list"
@@ -11,6 +11,8 @@ usage() {
   echo "  restart <name>"
   echo "  update  <name>"
   echo "  remove  <name>"
+  echo "  export           # Export all managed containers to JSON (stdout, field: args)"
+  echo "  import           # Import containers from JSON (stdin, field: args)"
   exit 1
 }
 
@@ -152,8 +154,42 @@ case "$CMD" in
     docker stop "$NAME"
     debug_echo docker rm $NAME
     docker rm "$NAME"
-  CODE=$?
-  run_status $CODE "Container $NAME removed." "Failed to remove container $NAME"
+    CODE=$?
+    run_status $CODE "Container $NAME removed." "Failed to remove container $NAME"
+    ;;
+  export)
+    # Export all managed containers to JSON (stdout)
+    docker ps -a --filter "label=$LABEL" --format '{{json .Names}}' | \
+      xargs -I {} docker inspect {} | jq '[.[] | {name: .Name[1:], image: .Config.Image, args: (.Config.Labels["docker-utility-options"] | select(.) | @base64d // "")}]'
+    CODE=${PIPESTATUS[2]:-${PIPESTATUS[1]:-${PIPESTATUS[0]}}}
+    run_status $CODE "" "Failed to export containers to stdout"
+    ;;
+  import)
+    # Import containers from JSON (stdin)
+    COUNT=0
+    jq -c '.[]' | while read -r item; do
+      NAME=$(echo "$item" | jq -r '.name')
+      IMAGE=$(echo "$item" | jq -r '.image')
+      ARGS=$(echo "$item" | jq -r '.args')
+      if [ -z "$NAME" ] || [ -z "$IMAGE" ]; then
+        error_echo "Skipping invalid entry: $item"
+        continue
+      fi
+      ARGS_ENCODED=""
+      if [ -n "$ARGS" ]; then
+        ARGS_ENCODED=$(printf '%s' "$ARGS" | base64)
+      fi
+      debug_echo docker run -d --restart=always --label $LABEL --label docker-utility-options=$ARGS_ENCODED --name $NAME $ARGS $IMAGE
+      # shellcheck disable=SC2086
+      docker run -d --restart=always --label "$LABEL" --label "docker-utility-options=$ARGS_ENCODED" --name "$NAME" $ARGS "$IMAGE"
+      CODE=$?
+      if [ $CODE -eq 0 ]; then
+        success_echo "Imported container $NAME from stdin."
+        COUNT=$((COUNT+1))
+      else
+        error_echo "Failed to import container $NAME (exit code $CODE)."
+      fi
+    done
     ;;
   *)
     usage
