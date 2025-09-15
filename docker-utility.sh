@@ -88,8 +88,8 @@ case "$CMD" in
     ;;
   list)
     # List all managed containers
-    debug_echo docker ps --filter label=$LABEL
-    docker ps --filter "label=$LABEL"
+    debug_echo docker ps --all --filter label=$LABEL
+    docker ps --all --filter "label=$LABEL"
     ;;
   args)
     # Show original docker run args for container
@@ -199,7 +199,7 @@ case "$CMD" in
     ;;
   export)
     # Export all managed containers to JSON (stdout)
-    docker ps -a --filter "label=$LABEL" --format '{{json .Names}}' | \
+    docker ps --all --filter "label=$LABEL" --format '{{json .Names}}' | \
       xargs -I {} docker inspect {} | jq '[.[] | {name: .Name[1:], image: .Config.Image, args: (.Config.Labels["docker-utility-options"] | select(.) | @base64d // "")}]'
     CODE=${PIPESTATUS[2]:-${PIPESTATUS[1]:-${PIPESTATUS[0]}}}
     run_status $CODE "" "Failed to export containers to stdout"
