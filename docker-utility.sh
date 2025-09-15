@@ -2,7 +2,7 @@
 
 LABEL="managed-by=docker-utility"
 
-VERSION="1.0.0"
+VERSION="1.1.0"
 
 usage() {
   echo "Docker Utility v$VERSION. https://github.com/feedbee/docker-utility"
