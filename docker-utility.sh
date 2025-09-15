@@ -5,7 +5,7 @@ LABEL="managed-by=docker-utility"
 VERSION="1.0.0"
 
 usage() {
-  echo "Docker Utility v.$VERSION. https://github.com/feedbee/docker-utility"
+  echo "Docker Utility v$VERSION. https://github.com/feedbee/docker-utility"
   echo "A simple shell script to manage Docker containers on a server using the Docker CLI."
   echo "Containers are managed with a special label and can be created, listed, restarted, updated, removed, exported, and imported using this utility."
   echo
@@ -206,7 +206,7 @@ case "$CMD" in
     ;;
   # Show utility version
   version)
-    echo "Docker Utility v.$VERSION"
+    echo "Docker Utility v$VERSION"
     ;;
   *)
     usage
