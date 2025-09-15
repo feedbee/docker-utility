@@ -15,7 +15,7 @@ A simple shell script to manage Docker containers on a server using the Docker C
 - **Colored output** for success (green) and errors (red)
 - **Proper error handling**: script exits with error code on failure
 - **Show utility version**
-- 
+
 ## Usage
 
 ```sh
