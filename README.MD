@@ -1,6 +1,6 @@
 # Docker Utility
 
-A simple shell script to manage Docker containers on a server using the Docker CLI. Containers are managed with a special label (`managed-by=docker-utility`) and can be created, listed, started, stopped, restarted, updated, removed, exported, and imported using this utility.
+A simple shell script to manage Docker containers on a server using the Docker CLI. Containers are managed with a special label (`managed-by=docker-utility`) and can be created, listed, started, stopped, restarted, updated, reloaded, removed, exported, and imported using this utility.
 
 ## Download
 
@@ -25,6 +25,7 @@ You can download the script directly from GitHub:
 - **Show original args** for a container
 - **Start/Stop** a managed container by name
 - **Restart** a managed container by name
+- **Reload** a container (recreates with original args, useful for catching up with changes in .evn files)
 - **Update** a container (pulls image, recreates with original args)
 - **Remove** a container from inventory and delete it
 - **Export** all managed containers to JSON (with args as plain text)
@@ -37,7 +38,7 @@ You can download the script directly from GitHub:
 ## Usage
 
 ```sh
-./docker-utility.sh [--debug] {create|list|args|start|stop|restart|update|remove|export|import|version} [options]
+./docker-utility.sh [--debug] {create|list|args|start|stop|restart|update|reload|remove|export|import|version} [options]
 ```
 
 ### Options
@@ -57,6 +58,8 @@ You can download the script directly from GitHub:
   Stop a managed container by name.
 - `restart <name>`  
   Restart a managed container by name.
+- `reload <name>`  
+  Recreate the container with the original args, without pulling the image (useful for config changes).
 - `update <name>`  
   Pull the latest image and recreate the container with the original args.
 - `remove <name>`  
@@ -88,6 +91,9 @@ You can download the script directly from GitHub:
 
 # Restart a container
 ./docker-utility.sh restart myapp
+
+# Reload a container
+./docker-utility.sh reload myapp
 
 # Update a container
 ./docker-utility.sh update myapp

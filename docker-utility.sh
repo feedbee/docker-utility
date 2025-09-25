@@ -16,8 +16,9 @@ usage() {
   echo "  args    <name>                                # Show original docker run args for container"
   echo "  start   <name>                                # Start a managed container"
   echo "  stop    <name>                                # Stop a managed container"
-  echo "  restart <name>                                # Restart a managed container"
-  echo "  update  <name>                                # Update (update image and recreate) a managed container"
+  echo "  restart <name>                                # Restart a running managed container"
+  echo "  reload  <name>                                # Recreate a managed container without pulling image (useful for config updates)"
+  echo "  update  <name>                                # Update (pull image and recreate) a managed container"
   echo "  remove  <name>                                # Remove a managed container"
   echo "  export                                        # Export all managed containers to JSON (stdout)"
   echo "  import                                        # Import containers from JSON (stdin)"
@@ -143,6 +144,41 @@ case "$CMD" in
     docker restart "$NAME"
     CODE=$?
     run_status $CODE "Container $NAME restarted." "Failed to restart container $NAME"
+    ;;
+  reload)
+    # Recreate a managed container
+    NAME="$1"
+    if [ -z "$NAME" ]; then
+      echo "Usage: $0 reload <name>"
+      exit 1
+    fi
+    shift 1
+    # Extract the image name from the existing container
+    IMAGE=$(docker inspect --format='{{.Config.Image}}' "$NAME")
+    if [ -z "$IMAGE" ]; then
+      echo "Error: Could not find image for container $NAME."
+      exit 1
+    fi
+    # Extract the original run options from the label
+    OPTIONS_ENCODED=$(docker inspect --format='{{ index .Config.Labels "docker-utility-options"}}' "$NAME")
+    if [ -z "$OPTIONS_ENCODED" ]; then
+      echo "Error: No options label found for container $NAME. Cannot recreate container."
+      exit 1
+    fi
+    OPTIONS=$(echo "$OPTIONS_ENCODED" | base64 --decode)
+    debug_echo docker stop $NAME
+    docker stop "$NAME"
+    CODE=$?
+    run_status $CODE "" "Failed to stop container $NAME"
+    debug_echo docker rm $NAME
+    docker rm "$NAME"
+    CODE=$?
+    run_status $CODE "" "Failed to remove container $NAME"
+    debug_echo docker run -d --restart=always --label $LABEL --label docker-utility-options=$OPTIONS_ENCODED --name $NAME $OPTIONS $IMAGE
+    # shellcheck disable=SC2086
+    docker run -d --restart=always --label "$LABEL" --label "docker-utility-options=$OPTIONS_ENCODED" --name "$NAME" $OPTIONS "$IMAGE"
+    CODE=$?
+    run_status $CODE "Container $NAME reloaded with image $IMAGE." "Failed to reload container $NAME"
     ;;
   update)
     # Update (update image and recreate) a managed container
