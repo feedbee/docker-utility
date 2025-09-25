@@ -9,7 +9,7 @@ You can download the script directly from GitHub:
 - **Latest stable release:**
   ```sh
   curl -fsSL -o docker-utility.sh \
-    https://github.com/feedbee/docker-utility/releases/download/v1.1.0/docker-utility.sh \
+    https://github.com/feedbee/docker-utility/releases/download/v1.2.0/docker-utility.sh \
     && chmod +x docker-utility.sh
   ```
 - **Latest from main branch:**
