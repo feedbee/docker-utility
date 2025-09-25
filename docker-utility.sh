@@ -159,12 +159,8 @@ case "$CMD" in
       echo "Error: Could not find image for container $NAME."
       exit 1
     fi
-    # Extract the original run options from the label
+    # Extract the original run options from the label (may be empty)
     OPTIONS_ENCODED=$(docker inspect --format='{{ index .Config.Labels "docker-utility-options"}}' "$NAME")
-    if [ -z "$OPTIONS_ENCODED" ]; then
-      echo "Error: No options label found for container $NAME. Cannot recreate container."
-      exit 1
-    fi
     OPTIONS=$(echo "$OPTIONS_ENCODED" | base64 --decode)
     debug_echo docker stop $NAME
     docker stop "$NAME"
@@ -194,12 +190,8 @@ case "$CMD" in
       echo "Error: Could not find image for container $NAME."
       exit 1
     fi
-    # Extract the original run options from the label
+    # Extract the original run options from the label (may be empty)
     OPTIONS_ENCODED=$(docker inspect --format='{{ index .Config.Labels "docker-utility-options"}}' "$NAME")
-    if [ -z "$OPTIONS_ENCODED" ]; then
-      echo "Error: No options label found for container $NAME. Cannot recreate container."
-      exit 1
-    fi
     OPTIONS=$(echo "$OPTIONS_ENCODED" | base64 --decode)
     debug_echo docker pull $IMAGE
     docker pull "$IMAGE"
