@@ -28,8 +28,8 @@ You can download the script directly from GitHub:
 - **Reload** a container (recreates with original args, useful for catching up with changes in .evn files)
 - **Update** a container (pulls image, recreates with original args)
 - **Remove** a container from inventory and delete it
-- **Export** all managed containers to JSON (with args as plain text)
-- **Import** containers from JSON (with args as plain text)
+- **Export** all managed containers to stdout in JSON or CSV format
+- **Import** containers from stdin in JSON or CSV format
 - **Show utility version**
 - **Debug mode**: print traced Docker commands in color
 - **Colored output** for success (green) and errors (red)
@@ -64,10 +64,10 @@ You can download the script directly from GitHub:
   Pull the latest image and recreate the container with the original args.
 - `remove <name>`  
   Stop and remove a managed container by name.
-- `export`  
-  Export all managed containers to JSON (to stdout). The JSON will have fields: `name`, `image`, and `args` (plain text, not encoded).
-- `import`  
-  Import containers from JSON (from stdin). The JSON must have fields: `name`, `image`, and `args` (plain text, not encoded).
+- `export [--csv]`  
+  Export all managed containers to stdout in JSON (default) or CSV (if --csv is provided) format.
+- `import [--csv]`  
+  Import containers from stdout in JSON (default) or CSV (if --csv is provided) format.
 - `version`  
   Show the utility version.
 
@@ -101,11 +101,17 @@ You can download the script directly from GitHub:
 # Remove a container
 ./docker-utility.sh remove myapp
 
-# Export all managed containers to a file
+# Export all managed containers to a file (JSON)
 ./docker-utility.sh export > containers.json
 
-# Import containers from a file
+# Export all managed containers to a file (CSV)
+./docker-utility.sh export --csv > containers.csv
+
+# Import containers from a file (JSON)
 ./docker-utility.sh import < containers.json
+
+# Import containers from a file (CSV)
+./docker-utility.sh import --csv < containers.csv
 
 # Show utility version
 ./docker-utility.sh version

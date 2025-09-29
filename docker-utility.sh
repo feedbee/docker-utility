@@ -20,8 +20,8 @@ usage() {
   echo "  reload  <name>                                # Recreate a managed container without pulling image (useful for config updates)"
   echo "  update  <name>                                # Update (pull image and recreate) a managed container"
   echo "  remove  <name>                                # Remove a managed container"
-  echo "  export                                        # Export all managed containers to JSON (stdout)"
-  echo "  import                                        # Import containers from JSON (stdin)"
+  echo "  export [--csv]                                # Export all managed containers to stdout in JSON (default) or CSV (if --csv) format"
+  echo "  import [--csv]                                # Import containers from stdin in JSON (default) or CSV (if --csv) format"
   echo "  version                                       # Show utility version"
   exit 1
 }
@@ -226,38 +226,79 @@ case "$CMD" in
     run_status $CODE "Container $NAME removed." "Failed to remove container $NAME"
     ;;
   export)
-    # Export all managed containers to JSON (stdout)
-    docker ps --all --filter "label=$LABEL" --format '{{json .Names}}' | \
-      xargs -I {} docker inspect {} | jq '[.[] | {name: .Name[1:], image: .Config.Image, args: (.Config.Labels["docker-utility-options"] | select(.) | @base64d // "")}]'
-    CODE=${PIPESTATUS[2]:-${PIPESTATUS[1]:-${PIPESTATUS[0]}}}
-    run_status $CODE "" "Failed to export containers to stdout"
+    # Export all managed containers to stdout in JSON (stdout) or CSV (if --csv is provided) format
+    if [ "$1" = "--csv" ]; then
+      shift
+      echo "name,image,args"
+      docker ps --all --filter "label=$LABEL" --format '{{.Names}}' | while read -r NAME; do
+        IMAGE=$(docker inspect --format='{{.Config.Image}}' "$NAME")
+        ARGS=$(docker inspect --format='{{ index .Config.Labels "docker-utility-options"}}' "$NAME" | base64 --decode)
+        ARGS_ESCAPED=$(echo "$ARGS" | sed 's/"/""/g')
+        echo "\"$NAME\",\"$IMAGE\",\"$ARGS_ESCAPED\""
+      done
+      CODE=${PIPESTATUS[0]}
+      run_status $CODE "" "Failed to export containers to CSV"
+    else
+      docker ps --all --filter "label=$LABEL" --format '{{json .Names}}' | \
+        xargs -I {} docker inspect {} | jq '[.[] | {name: .Name[1:], image: .Config.Image, args: (.Config.Labels["docker-utility-options"] | select(.) | @base64d // "")}]'
+      CODE=${PIPESTATUS[2]:-${PIPESTATUS[1]:-${PIPESTATUS[0]}}}
+      run_status $CODE "" "Failed to export containers to stdout"
+    fi
     ;;
   import)
-    # Import containers from JSON (stdin)
-    COUNT=0
-    jq -c '.[]' | while read -r item; do
-      NAME=$(echo "$item" | jq -r '.name')
-      IMAGE=$(echo "$item" | jq -r '.image')
-      ARGS=$(echo "$item" | jq -r '.args')
-      if [ -z "$NAME" ] || [ -z "$IMAGE" ]; then
-        error_echo "Skipping invalid entry: $item"
-        continue
-      fi
-      ARGS_ENCODED=""
-      if [ -n "$ARGS" ]; then
-        ARGS_ENCODED=$(printf '%s' "$ARGS" | base64)
-      fi
-      debug_echo docker run -d --restart=always --label $LABEL --label docker-utility-options=$ARGS_ENCODED --name $NAME $ARGS $IMAGE
-      # shellcheck disable=SC2086
-      docker run -d --restart=always --label "$LABEL" --label "docker-utility-options=$ARGS_ENCODED" --name "$NAME" $ARGS "$IMAGE"
-      CODE=$?
-      if [ $CODE -eq 0 ]; then
-        success_echo "Imported container $NAME from stdin."
-        COUNT=$((COUNT+1))
-      else
-        error_echo "Failed to import container $NAME (exit code $CODE)."
-      fi
-    done
+    # Import containers from stdin in JSON (default) or CSV (if --csv is provided) format
+    if [ "$1" = "--csv" ]; then
+      shift
+      COUNT=0
+      tail -n +2 | while IFS=, read -r NAME IMAGE ARGS; do
+        NAME=$(echo "$NAME" | sed 's/^"\(.*\)"$/\1/')
+        IMAGE=$(echo "$IMAGE" | sed 's/^"\(.*\)"$/\1/')
+        ARGS=$(echo "$ARGS" | sed 's/^"\(.*\)"$/\1/')
+        if [ -z "$NAME" ] || [ -z "$IMAGE" ]; then
+          error_echo "Skipping invalid entry: $NAME,$IMAGE,$ARGS"
+          continue
+        fi
+        ARGS_ENCODED=""
+        if [ -n "$ARGS" ]; then
+          ARGS_ENCODED=$(printf '%s' "$ARGS" | base64)
+        fi
+        debug_echo docker run -d --restart=always --label $LABEL --label docker-utility-options=$ARGS_ENCODED --name $NAME $ARGS $IMAGE
+        # shellcheck disable=SC2086
+        docker run -d --restart=always --label "$LABEL" --label "docker-utility-options=$ARGS_ENCODED" --name "$NAME" $ARGS "$IMAGE"
+        CODE=$?
+        if [ $CODE -eq 0 ]; then
+          success_echo "Imported container $NAME from CSV."
+          COUNT=$((COUNT+1))
+        else
+          error_echo "Failed to import container $NAME (exit code $CODE)."
+        fi
+      done
+    else
+      COUNT=0
+      jq -c '.[]' | while read -r item; do
+        NAME=$(echo "$item" | jq -r '.name')
+        IMAGE=$(echo "$item" | jq -r '.image')
+        ARGS=$(echo "$item" | jq -r '.args')
+        if [ -z "$NAME" ] || [ -z "$IMAGE" ]; then
+          error_echo "Skipping invalid entry: $item"
+          continue
+        fi
+        ARGS_ENCODED=""
+        if [ -n "$ARGS" ]; then
+          ARGS_ENCODED=$(printf '%s' "$ARGS" | base64)
+        fi
+        debug_echo docker run -d --restart=always --label $LABEL --label docker-utility-options=$ARGS_ENCODED --name $NAME $ARGS $IMAGE
+        # shellcheck disable=SC2086
+        docker run -d --restart=always --label "$LABEL" --label "docker-utility-options=$ARGS_ENCODED" --name "$NAME" $ARGS "$IMAGE"
+        CODE=$?
+        if [ $CODE -eq 0 ]; then
+          success_echo "Imported container $NAME from stdin."
+          COUNT=$((COUNT+1))
+        else
+          error_echo "Failed to import container $NAME (exit code $CODE)."
+        fi
+      done
+    fi
     ;;
   version)
     # Show utility version
