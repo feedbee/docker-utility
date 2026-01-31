@@ -81,7 +81,7 @@ case "$CMD" in
     fi
     shift 2
     # Encode the run options for storage in a label
-    OPTIONS_ENCODED=$(printf '%s' "$*" | base64)
+    OPTIONS_ENCODED=$(printf '%s' "$*" | base64 | tr -d '\r\n')
     debug_echo docker run -d --restart=always --label $LABEL --label docker-utility-options=$OPTIONS_ENCODED --name $NAME $* $IMAGE
     docker run -d --restart=always --label "$LABEL" --label "docker-utility-options=$OPTIONS_ENCODED" --name "$NAME" "$@" "$IMAGE"
     CODE=$?
@@ -260,7 +260,7 @@ case "$CMD" in
         fi
         ARGS_ENCODED=""
         if [ -n "$ARGS" ]; then
-          ARGS_ENCODED=$(printf '%s' "$ARGS" | base64)
+          ARGS_ENCODED=$(printf '%s' "$ARGS" | base64 | tr -d '\r\n')
         fi
         debug_echo docker run -d --restart=always --label $LABEL --label docker-utility-options=$ARGS_ENCODED --name $NAME $ARGS $IMAGE
         # shellcheck disable=SC2086
@@ -285,7 +285,7 @@ case "$CMD" in
         fi
         ARGS_ENCODED=""
         if [ -n "$ARGS" ]; then
-          ARGS_ENCODED=$(printf '%s' "$ARGS" | base64)
+          ARGS_ENCODED=$(printf '%s' "$ARGS" | base64 | tr -d '\r\n')
         fi
         debug_echo docker run -d --restart=always --label $LABEL --label docker-utility-options=$ARGS_ENCODED --name $NAME $ARGS $IMAGE
         # shellcheck disable=SC2086
